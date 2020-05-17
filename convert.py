@@ -58,7 +58,6 @@ def getImgInfo(img, img_path):
             json.dump(data, f, indent=4)
         return True
     else:
-        print(img_path)
         return False
 
 # using Harris corner detection to find corners?
@@ -99,6 +98,7 @@ def get_corners_from_contours(contours, corner_amount=16):
 if __name__ == "__main__":
     #getRootjson()
     img = glob.glob(all_mask_dir + "/*.png")
+    bad_img_list = []
     for img_path in tqdm(img):
         img_cv = cv2.imread(img_path)
         img_name = img_path.split("/")[-1]
@@ -107,3 +107,8 @@ if __name__ == "__main__":
         save_loc = "./output"
         if getImgInfo(img_cv, img_path):
             cv2.imwrite(os.path.join(save_loc, img_name_no_ext + ".jpg"), img_cv)
+        else:
+            bad_img_list.append(img_path)
+    print("{} images processed, {} failed.".format(len(img), len(bad_img_list)))
+    print("Bad images are:")
+    print(bad_img_list)
