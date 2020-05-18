@@ -22,19 +22,21 @@ def timer(func):
 # define global variables:
 root = "./data"
 all_mask_dir = os.path.join(root, "mask_all1")
+all_mask_filtered_dir = os.path.join(root, "mask_all1_filtered")
 cropped_mask_black = os.path.join(root, "output")
 cropped_mask_white = os.path.join(root, "output_whitebg")
+cropped_swapped_bg = ''
 
 # json file:
 root_json = "train.json"
-def getRootjson():
+def getRootjson(impath):
     im_id = 0
     data = {'images':[]}
-    for img_name in glob.glob(cropped_mask_white + "/*.jpg"):
+    for img_name in glob.glob(impath + "/*.jpg"):
         print(img_name)
         im = cv2.imread(img_name)
         img_local_name = img_name.split("/")[-1]
-        im_info = {'height': im.shape[0], 'width': im.shape[1], 'id': im_id, ' file_name': img_local_name}
+        im_info = {'height': im.shape[0], 'width': im.shape[1], 'id': im_id, 'file_name': img_local_name}
         data['images'].append(im_info)
         im_id += 1
     with open(root_json, 'w') as f:
@@ -95,8 +97,11 @@ def get_corners_from_contours(contours, corner_amount=16):
         hull = cv2.convexHull(poly_approx)
         return hull
 
+def validation(img_folder):
+    pass
+
 if __name__ == "__main__":
-    #getRootjson()
+    getRootjson(all_mask_filtered_dir)
     img = glob.glob(all_mask_dir + "/*.png")
     bad_img_list = []
     for img_path in tqdm(img):

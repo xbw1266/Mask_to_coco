@@ -2,6 +2,7 @@ import cv2
 import glob
 from tqdm import tqdm
 import numpy as np
+import os
 
 #mask = cv2.imread("image_0_mask.png")
 #print(mask.shape)
@@ -46,18 +47,24 @@ def getMask(src):
     return thresh
 
 
+# define global variables:
+root = "../data"
+all_mask_dir = os.path.join(root, "mask_all1")
+all_mask_filtered_dir = os.path.join(root, "mask_all1_filtered")
+cropped_mask_black = os.path.join(root, "output")
+cropped_mask_white = os.path.join(root, "output_whitebg")
+
 if __name__ == "__main__":
-    img_name = glob.glob("./all1/*.jpg")
+    img_name = glob.glob(root + "/all1/*.jpg")
     for img in tqdm(img_name):
         name = img.split("/")[-1]
         mask_name = name.split(".")[0] + ".png"
-        mask = "./mask_all1/" + mask_name
+        mask = all_mask_filtered_dir + "/" + mask_name
         mask = cv2.imread(mask)
-	
         src = cv2.imread(img)
         output = getCrop( mask, src)
         output = output[200:316+690, 100:350+486]
-        cv2.imwrite("./output_whitebg/" + name, output)
+        cv2.imwrite("./output_whitebg_filtered/" + name, output)
         #th_mask = getMask(output)
         #bg = cv2.imread("./construction_site/google_0000.jpg")
         #rtn = swapBg(bg, output, th_mask)
