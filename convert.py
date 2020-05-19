@@ -25,7 +25,7 @@ all_mask_dir = os.path.join(root, "mask_all1")
 all_mask_filtered_dir = os.path.join(root, "mask_all1_filtered")
 cropped_mask_black = os.path.join(root, "output")
 cropped_mask_white = os.path.join(root, "output_whitebg")
-cropped_swapped_bg = ''
+cropped_swapped_bg = 'swapped_bg_cropped'
 
 # json file:
 root_json = "train.json"
@@ -100,10 +100,16 @@ def get_corners_from_contours(contours, corner_amount=16):
 def validation(img_folder):
     pass
 
-if __name__ == "__main__":
-    getRootjson(all_mask_filtered_dir)
-    img = glob.glob(all_mask_dir + "/*.png")
+
+def readJson(json_file):
+    assert json_file.endswith(".json"), "Wrong json file input!"
+    with open(json_file, "r") as f:
+        data = json.load(f)
+    return data
+
+def rawSorting(img_path):
     bad_img_list = []
+    img = glob.glob(img_path + "/*.png")
     for img_path in tqdm(img):
         img_cv = cv2.imread(img_path)
         img_name = img_path.split("/")[-1]
@@ -117,3 +123,43 @@ if __name__ == "__main__":
     print("{} images processed, {} failed.".format(len(img), len(bad_img_list)))
     print("Bad images are:")
     print(bad_img_list)
+
+def getPolyInfo(mask_img, swapped_bg_cropped_path):
+    assert mask_img is not None, "Image data error!"
+    data = {'version' : '4.2.9', 'flags' : {}, 'shapes' : [{'label' : 'baxter', 'points' : [], 'group_id' : None, 'shape_type' : 'polygon', 'flags' : {}}], 'imagePath' : '', 'imageData' : '', 'imageHeight' : '', 'imageWidth' : ''}
+    corners = getCorners(mask_img, 15, False)
+    if corners is not None:
+        for point in corners:
+            data['shapes'][0]['points'].append([int(point[0]), int(point[1])])
+        data['imagePath'] = swapped_bg_cropped_path.split('/')[-1]
+        img_name_no_ext = data['imagePath'].split('.')[0]
+        with open(swapped_bg_cropped_path, 'rb') as f:
+            data['imageData'] = str(base64.b64encode(f.read()))
+        data['imageHeight'] = mask_img.shape[1]
+        data['imageWidth'] = mask_img.shape[0]
+        with open(os.path.join(cropped_swapped_bg, img_name_no_ext + ".json"), 'w+') as f:
+            json.dump(data, f, indent=4)
+        return True
+    else:
+        return False
+
+def generatePolygonJson(good_json, img_path):
+    data = readJson(good_json)
+    bad_list = []
+    for img_name in tqdm(data['good']):
+        mask = cv2.imread(os.path.join(all_mask_dir, img_name + ".png"))
+        assert mask is not None
+        mask = mask[200:316+690, 100:350+486]
+        if not getPolyInfo(mask, os.path.join(img_path, img_name + ".jpg")):
+            bad_list.append(img_name)
+    print("{} images processed, {} failed.".format(len(data['good']), len(bad_list)))
+    print("Bad images are:")
+    print(bad_list)
+            
+        
+    
+
+if __name__ == "__main__":
+    #getRootjson(cropped_swapped_bg)
+    generatePolygonJson("good_img.json", cropped_swapped_bg)
+    
