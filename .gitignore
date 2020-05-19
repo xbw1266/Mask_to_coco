@@ -4,3 +4,5 @@ data
 img_json
 output
 swapped_bg_cropped
+.ipynb_checkpoints
+baxter
