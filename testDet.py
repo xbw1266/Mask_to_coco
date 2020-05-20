@@ -11,7 +11,7 @@ import functools
 import argparse
 import os
 import torch
-
+import numpy as np
 
 def timer(func):
     @functools.wraps(func)
@@ -37,7 +37,7 @@ class DetectronInf():
         self.cfg.DATASETS.TEST = ("baxter_test", )
         self.cfg.DATALOADER.NUM_WORKERS = 2
         self.cfg.MODEL.ROI_HEADS.NUM_CLASSES = 1
-        self.metadata = MetadataCatalog.get("baxter_train")
+        self.metadata = MetadataCatalog.get("__unused")
         self.cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"))
         self.cfg.MODEL.WEIGHTS = os.path.join(weights_dir, "model_final.pth")
         self.cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.1
@@ -52,6 +52,15 @@ class DetectronInf():
         img_vis = img[:, :, ::-1]
         assert "instances" in output
         instances = output["instances"].to(self.cpu_device)
+        scores = (instances.scores).tolist()
+        if len(scores) > 0:
+            idx = scores.index(max(scores))
+            instances = instances[idx]
+        mask = (instances.pred_masks).numpy()
+        mask = mask.squeeze()
+        img = np.zeros((mask.shape))
+        img[mask == True] = 1
+        cv2.imshow("mask", img)
         visualizer = Visualizer(img_vis, self.metadata, scale=0.8, instance_mode=ColorMode.IMAGE )
         vis_output = visualizer.draw_instance_predictions(instances)
         rtn = vis_output.get_image()[:, :, ::-1]
